@@ -1,0 +1,115 @@
+---
+import fs from 'fs';
+import path from 'path';
+import * as ColorThief from 'colorthief';
+import Layout from '../layouts/Layout.astro';
+import FluidBackground from '../components/FluidBackground';
+import CrateDiggerWrapper from '../components/CrateDiggerWrapper';
+import PlaylistSection from '../components/PlaylistSection.astro';
+import { siteConfig } from '../config';
+import { gallery, heroConfig, type AlbumEntry } from '../gallery.config';
+
+// ── 1. Legge TUTTI i file immagine presenti in public/images/ ──────────────
+const IMAGES_DIR = path.join(process.cwd(), 'public', 'images');
+const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif']);
+
+const allImageFiles: string[] = fs.existsSync(IMAGES_DIR)
+  ? fs.readdirSync(IMAGES_DIR)
+      .filter(f => IMAGE_EXTS.has(path.extname(f).toLowerCase()))
+      .sort()
+  : [];
+
+// ── 2. Costruisce la lista finale: config + auto-discovery ─────────────────
+// Gli album nel config appaiono nell'ordine in cui sono elencati.
+// Le immagini trovate nel disco ma NON nel config appaiono in fondo (ordine alfabetico).
+const configFiles = new Set(gallery.map(a => a.imageFile));
+
+const autoEntries: AlbumEntry[] = allImageFiles
+  .filter(f => !configFiles.has(f))
+  .map(f => ({
+    title: '',   // nessuna caption per le immagini non configurate
+    artist: '',
+    imageFile: f,
+    tracks: [],
+  }));
+
+const fullGallery: AlbumEntry[] = [...gallery, ...autoEntries];
+
+// ── 3. Estrazione colore dominante (ColorThief) per ogni album ────────────
+const processedGallery = await Promise.all(
+  fullGallery.map(async (album) => {
+    let hexColor = '#1d1d1f';
+
+    const imagePath = path.join(IMAGES_DIR, album.imageFile);
+    if (fs.existsSync(imagePath)) {
+      try {
+        const rgb = await ColorThief.getColor(imagePath) as any;
+        let r: number, g: number, b: number;
+        if (Array.isArray(rgb)) {
+          [r, g, b] = rgb;
+        } else if (rgb && typeof rgb._r === 'number') {
+          r = rgb._r; g = rgb._g; b = rgb._b;
+        }
+        if (r! !== undefined) {
+          hexColor = `#${r!.toString(16).padStart(2,'0')}${g!.toString(16).padStart(2,'0')}${b!.toString(16).padStart(2,'0')}`;
+        }
+      } catch {
+        // Immagine non processabile — usa colore default
+      }
+    }
+
+    return {
+      ...album,
+      dominantColor: hexColor,
+      coverUrl: `/images/${album.imageFile}`,
+    };
+  })
+);
+---
+
+<Layout title={heroConfig.title}>
+  {siteConfig.fluidBackground.enabled && <FluidBackground client:load />}
+
+  <!-- Hero -->
+  <div class={siteConfig.layout.scrollSnap
+    ? "h-[100dvh] snap-center flex items-center justify-center flex-col relative z-10 flex-shrink-0"
+    : "relative z-10 flex flex-col items-center justify-start pt-32 pb-24"}>
+    <header class="text-center px-4 opacity-0 animate-fade-in-up">
+      <h1 class="text-5xl md:text-7xl font-sans font-medium tracking-tight text-apple-light mb-6">
+        {heroConfig.title}
+      </h1>
+      <p class="text-xl font-mono text-apple-muted max-w-2xl mx-auto">
+        {heroConfig.subtitle}
+      </p>
+      {siteConfig.layout.scrollSnap && (
+        <p class="mt-10 text-sm font-mono text-apple-muted/40 uppercase tracking-widest animate-pulse">
+          {heroConfig.scrollHint}
+        </p>
+      )}
+    </header>
+  </div>
+
+  <!-- Galleria — ogni immagine in public/images/ appare automaticamente -->
+  <div class="w-full relative z-10">
+    {processedGallery.map((album) => (
+      <CrateDiggerWrapper client:visible color={album.dominantColor}>
+        <PlaylistSection
+          title={album.title}
+          artist={album.artist}
+          coverImage={album.coverUrl}
+          tracks={album.tracks}
+        />
+      </CrateDiggerWrapper>
+    ))}
+  </div>
+</Layout>
+
+<style>
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+  .animate-fade-in-up {
+    animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+</style>

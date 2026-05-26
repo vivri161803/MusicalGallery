@@ -1,0 +1,33 @@
+---
+interface Props {
+  title: string;
+  artist: string;
+  coverImage: string;
+  tracks: string[];
+}
+
+const { title, artist, coverImage } = Astro.props;
+---
+
+<!-- Fullscreen album slide: solo immagine + caption minimale -->
+<div class="relative w-full h-full flex items-center justify-center overflow-hidden px-8">
+  
+  <!-- Copertina album -->
+  <div class="album-image-container relative">
+    <img
+      src={coverImage}
+      alt={`${title} — ${artist}`}
+      class="block object-cover rounded-sm shadow-2xl"
+      style="max-height: 72dvh; max-width: 72dvh; width: 100%; aspect-ratio: 1 / 1;"
+      draggable="false"
+    />
+    <!-- Caption minimale — mostrata solo se il titolo è impostato -->
+    {title && (
+      <div class="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-baseline justify-between"
+           style="background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%);">
+        <span class="text-white/90 text-lg font-sans font-medium tracking-tight">{title}</span>
+        <span class="text-white/50 text-xs font-mono uppercase tracking-widest">{artist}</span>
+      </div>
+    )}
+  </div>
+</div>
