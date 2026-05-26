@@ -54,26 +54,7 @@ export const gallery: AlbumEntry[] = [
       "In Waves - Jamie xx",
       "You'd prefer an Astronaut - Hum"
     ],
-  },
-
-  {
-    title: "10 Aprile",
-    artist: "2026",
-    imageFile: "9D7F314E-0C6F-41A6-9E3F-4E3AEB71487D_1_105_c.jpeg",
-    tracks: [
-      "Conversations with myself - Bill Evans",
-      "St. Elsewhere - Gnarls Barkley",
-      "Illmatic - Nas",
-      "Selected Ambient Works Volume II - Aphex Twin",
-      "Head Hunters - Herbie Hancock",
-      "Sleep's Holy Mountain - Sleep",
-      "James Blake - James Blake",
-      "Crooks & Lovers - Mount Kimbie",
-      "Expansions - Lonnie Liston Smith",
-      "Bloom - Rufus Du Sol",
-      "Common Dreads - Enter Shikari",
-    ],
-  },
+  }
 
   // ── TEMPLATE PER UN NUOVO ALBUM ────────────────────────────────────────
   // Rimuovi i commenti, compila i campi e metti il file in public/images/.
